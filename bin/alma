@@ -1,0 +1,12 @@
+#!/usr/bin/env bash
+#
+# Shell into the AlmaLinux target container or run a command in it.
+#
+#   bin/alma                    interactive shell
+#   bin/alma puppet agent -t    apply the catalog
+
+set -euo pipefail
+
+source "$(dirname "${BASH_SOURCE[0]}")/lib/classroom.sh"
+
+enter agent-alma "$@"

@@ -1,0 +1,93 @@
+name: openvox-classroom
+
+# Three containers on one private bridge network, all running on the Docker
+# daemon inside the devcontainer (docker-in-docker):
+#
+#   openvox-server  the OpenVox 8 server, running the CA
+#   agent-alma      AlmaLinux 10 target
+#   agent-ubuntu    Ubuntu 26.04 target
+#
+# The devcontainer itself is not in this file. It is defined by
+# devcontainer.json and hosts the container these three run inside of.
+
+# The agents' shared environment. Compose ignores top-level x- keys.
+x-agent-env: &agent_env
+  OPENVOX_COLLECTION: openvox8
+  # Empty means "latest". Set to a version string to pin to a particular version.
+  OPENVOX_AGENT_VERSION: ''
+  OPENVOX_SERVER: server.example.com
+  # So `bin/alma puppet agent -t` and the shells it opens find puppet
+  # without a full path. Both base images use the standard PATH below.
+  PATH: /opt/puppetlabs/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+
+services:
+  # ---------------------------------------------------------------------------
+  # NOTE: This service deliberately has no `ports:` block. AUTOSIGN is on, so the
+  # CA signs any certificate request it receives. That is safe only because 8140
+  # is reachable from the other containers on the 'classroom' network and from
+  # nowhere else. Publishing the port would put an autosigning CA on the devcontainer's
+  # interface, where VS Code and Codespaces port forwarding can carry it further.
+  #
+  # If you ever do need to expose it, change AUTOSIGN first:
+  #   AUTOSIGN: /etc/puppetlabs/puppet/autosign.conf   # certname allowlist file
+  #   AUTOSIGN: /etc/puppetlabs/puppet/autosign.sh     # policy executable
+  # ---------------------------------------------------------------------------
+  openvox-server:
+    container_name: openvox-server
+    hostname: server.example.com
+    # Pin to a full version (e.g. :8.15.1) if desired, rather than latest (e.g. :8)
+    image: ghcr.io/openvoxproject/openvoxserver:8
+    # Survives crashes and daemon restarts (a Codespace stopping and resuming).
+    restart: unless-stopped
+    environment:
+      # Must match hostname: above. The image's built-in healthcheck curls
+      # https://$HOSTNAME:8140 using the server's own cert, so a mismatch here
+      # leaves the container unhealthy.
+      CERTNAME: server.example.com
+      CA_HOSTNAME: server.example.com
+      DNS_ALT_NAMES: puppet,server,openvox-server
+      AUTOSIGN: 'true'
+      USE_OPENVOXDB: 'false'
+      # The image defaults this to 'unlimited', which caches the compiled
+      # environment forever. In a classroom that means editing site.pp and
+      # re-running the agent appears to do nothing. 0 re-reads from disk on
+      # every compile.
+      OPENVOXSERVER_ENVIRONMENT_TIMEOUT: '0'
+    volumes:
+      - ../code:/etc/puppetlabs/code
+    networks:
+      classroom:
+        aliases:
+          - server.example.com
+          - puppet
+
+  agent-alma:
+    container_name: agent-alma
+    hostname: alma.example.com
+    image: almalinux:10
+    restart: unless-stopped
+    command: ["bash", "/opt/classroom/bootstrap-agent.sh"]
+    environment: *agent_env
+    volumes:
+      - ./scripts:/opt/classroom:ro
+    networks:
+      classroom:
+        aliases:
+          - alma.example.com
+
+  agent-ubuntu:
+    container_name: agent-ubuntu
+    hostname: ubuntu.example.com
+    image: ubuntu:26.04
+    restart: unless-stopped
+    command: ["bash", "/opt/classroom/bootstrap-agent.sh"]
+    environment: *agent_env
+    volumes:
+      - ./scripts:/opt/classroom:ro
+    networks:
+      classroom:
+        aliases:
+          - ubuntu.example.com
+
+networks:
+  classroom:

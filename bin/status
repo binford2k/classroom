@@ -1,0 +1,57 @@
+#!/usr/bin/env bash
+#
+# Health check for the lab: container states, the CA's view of the
+# world, and each agent's certificate.
+
+set -uo pipefail
+
+source "$(dirname "${BASH_SOURCE[0]}")/lib/classroom.sh"
+
+container_state() {
+  docker inspect --format '{{.State.Status}}' "$1" 2>/dev/null || printf 'missing'
+}
+
+printf 'Containers\n'
+for container in "$SERVER_CONTAINER" agent-alma agent-ubuntu; do
+  printf '  %-16s %s\n' "$container" "$(container_state "$container")"
+done
+
+# The lab is only safe to run with AUTOSIGN on because the CA is unreachable
+# from outside the compose network. Publishing 8140 breaks that, so say so
+# loudly rather than letting it pass unnoticed.
+published="$(docker inspect \
+  --format '{{range $port, $bindings := .NetworkSettings.Ports}}{{if $bindings}}{{$port}} {{end}}{{end}}' \
+  "$SERVER_CONTAINER" 2>/dev/null)"
+
+if [ -n "${published// /}" ]; then
+  printf '\n'
+  echo "  WARNING: ${SERVER_CONTAINER} publishes ${published} to the host."
+  echo "  This CA autosigns every request it receives. Remove the 'ports:'"
+  echo "  entry from .devcontainer/docker-compose.yml, or switch AUTOSIGN to"
+  echo "  an allowlist file before exposing it."
+fi
+
+echo
+echo 'Certificate authority'
+if ! docker exec "$SERVER_CONTAINER" puppetserver ca list --all 2>&1 | sed 's/^/  /'; then
+  echo "  Unavailable (is the server still starting? try: docker logs ${SERVER_CONTAINER})"
+fi
+
+echo
+echo 'Agents'
+for target in alma ubuntu; do
+  container="agent-${target}"
+  certname="${target}.example.com"
+
+  if ! docker exec "$container" test -x /opt/puppetlabs/bin/puppet 2>/dev/null; then
+    printf '  %-16s agent not installed yet (docker logs %s)\n' "$container" "$container"
+    continue
+  fi
+
+  version="$(docker exec "$container" puppet --version 2>/dev/null | tr -d '\r')"
+  if docker exec "$container" test -f "/etc/puppetlabs/puppet/ssl/certs/${certname}.pem" 2>/dev/null; then
+    printf '  %-16s OpenVox %-10s cert: %s\n' "$container" "$version" "$certname"
+  else
+    printf '  %-16s OpenVox %-10s cert: NONE (awaiting signature)\n' "$container" "$version"
+  fi
+done

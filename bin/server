@@ -1,0 +1,22 @@
+#!/usr/bin/env bash
+#
+# Shell into the OpenVox server container, or run a command in it.
+#
+#   bin/server                                interactive shell
+#   bin/server puppetserver ca list --all     inspect the CA
+#   bin/server --root                         shell as root
+#
+# Commands run as the image's `puppet` user by default, because that uid owns
+# the CA directory. Use --root when you need to install tools or read files the
+# puppet user cannot.
+
+set -euo pipefail
+
+source "$(dirname "${BASH_SOURCE[0]}")/lib/classroom.sh"
+
+if [ "${1-}" = --root ]; then
+  EXEC_USER=root
+  shift
+fi
+
+enter "$SERVER_CONTAINER" "$@"

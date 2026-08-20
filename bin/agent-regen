@@ -1,0 +1,34 @@
+#!/usr/bin/env bash
+#
+# Revoke a target's certificate and regenerate it again from scratch.
+#
+#   bin/agent-regen alma
+#   bin/agent-regen ubuntu
+
+set -euo pipefail
+
+source "$(dirname "${BASH_SOURCE[0]}")/lib/classroom.sh"
+
+if [ "$#" -ne 1 ]; then
+  error "Usage: $(basename "$0") <alma|ubuntu>"
+fi
+
+target="$1"
+container="agent-${target}"
+certname="${target}.example.com"
+
+require_running "$SERVER_CONTAINER"
+require_running "$container"
+
+# Fails when there is nothing signed for this name yet, which is fine.
+echo "Cleaning ${certname} from the CA"
+docker exec "$SERVER_CONTAINER" puppetserver ca clean --certname "$certname" ||
+  echo 'Nothing to clean on the CA, continuing.'
+
+echo "Discarding local SSL state on ${container}"
+docker exec "$container" rm -rf /etc/puppetlabs/puppet/ssl
+
+echo 'Requesting a new certificate'
+docker exec "$container" puppet ssl bootstrap --waitforcert 5 --maxwaitforcert 120
+
+echo "Certificate for ${container} regenerated. Verify with: bin/status"

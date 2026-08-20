@@ -1,0 +1,31 @@
+{
+  "name": "OpenVox Classroom",
+  "image": "mcr.microsoft.com/devcontainers/base:ubuntu",
+
+  "features": {
+    // Runs a private Docker daemon inside this container. The lab lives on
+    // that daemon, so it cannot touch Docker on the machine hosting the
+    // devcontainer, and its state (images, containers, the CA) persists
+    // across rebuilds in the feature's dind-var-lib-docker volume.
+    "ghcr.io/devcontainers/features/docker-in-docker:2": {}
+  },
+
+  // Memory only, on purpose. Codespaces treats hostRequirements as a hard
+  // minimum, so asking for 4 CPUs would lock students out of the free 2-core
+  // machine. Two cores handle a 1 GB-heap JVM and two idle agents fine.
+  "hostRequirements": {
+    "memory": "8gb"
+  },
+
+  "postCreateCommand": "bash .devcontainer/scripts/post-create.sh",
+  "postStartCommand": "bash .devcontainer/scripts/lab-up.sh",
+
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        // Adds a Containers panel: right-click a lab container, Attach Shell.
+        "ms-azuretools.vscode-containers"
+      ]
+    }
+  }
+}
