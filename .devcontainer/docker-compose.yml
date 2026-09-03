@@ -61,11 +61,18 @@ services:
           - server.example.com
           - puppet
 
+  # Both targets run systemd as PID 1 once bootstrap-agent.sh hands off to it
+  # so services can run on them. Also ignores the default SIGTERM stop signal
+  # that "docker stop" or "compose down" would normally send to PID 1, and which
+  # systemd would ignore (well, re-executes itself when it receives it).
+  # SIGRTMIN+3 tells it to shut down cleanly rather than hang until Docker kills it.
   agent-alma:
     container_name: agent-alma
     hostname: alma.example.com
-    image: almalinux:10
+    image: almalinux/10-init:10
     restart: unless-stopped
+    privileged: true
+    stop_signal: SIGRTMIN+3
     command: ["bash", "/opt/classroom/bootstrap-agent.sh"]
     environment: *agent_env
     volumes:
@@ -80,6 +87,8 @@ services:
     hostname: ubuntu.example.com
     image: ubuntu:26.04
     restart: unless-stopped
+    privileged: true
+    stop_signal: SIGRTMIN+3
     command: ["bash", "/opt/classroom/bootstrap-agent.sh"]
     environment: *agent_env
     volumes:

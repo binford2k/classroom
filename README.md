@@ -77,6 +77,7 @@ bin/server --root                   # shell into the server as root, for install
 
 bin/alma puppet agent -t            # run these without opening a shell
 bin/server puppetserver ca list --all
+bin/alma systemctl status httpd     # the targets run systemd, so services work
 
 bin/status                          # container statuses, CA, agent certs
 bin/agent-regen alma                # revoke and regenerate the agent's cert
@@ -120,7 +121,7 @@ forwarding can carry it further. `bin/status` warns when it sees this. Change
   scripts/                     Machinery, nothing in here is run by hand
     lab-up.sh                  Waits for the inner Docker daemon, compose up
     post-create.sh             Starts and configures the lab
-    bootstrap-agent.sh         Installs the agent and generates a cert for it
+    bootstrap-agent.sh         Installs the agent, generates a cert for it, starts systemd
 bin/                           Commands for you to run
 code/                          Puppet code mounted at /etc/puppetlabs/code in the server container
   environments/production/
@@ -137,6 +138,10 @@ own machine is root-equivalent. The lab, though, runs on a daemon inside the
 dev container, so it cannot see or touch the containers and images on your machine.
 Still, running docker-in-docker is not recommended on your local machine for security
 reasons, so it's best to run this in GitHub Codespaces.
+
+The two targets run systemd as PID 1 so that OpenVox can manage services on them,
+which requires `privileged: true` on those containers. That is another reason to
+prefer Codespaces over your own machine.
 
 Lab state lives in a Docker volume the feature creates, named
 `dind-var-lib-docker-*`, so images, containers, and with them the CA and the

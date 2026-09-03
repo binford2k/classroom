@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 #
-# Installs the OpenVox agent on a stock edistro image, gets a cert from the server, then parks.
+# Installs the OpenVox agent on a stock distro image, gets a cert from the server,
+# then hands off to systemd so the target can run services.
 #
 # Runs on every container start. The install is skipped if the agent is already
 # present, so `docker restart agent-alma` is fast while
@@ -60,6 +61,11 @@ install_agent_deb() {
   apt-get install -y "$package"
 
   apt-get install -y --no-install-recommends less vim iproute2
+
+  # The stock ubuntu image has no init system. The AlmaLinux target uses an
+  # image that already ships systemd and a D-Bus broker, so only Ubuntu needs
+  # this.
+  apt-get install -y --no-install-recommends systemd dbus
 }
 
 if [ -x "$PUPPET_BIN" ]; then
@@ -96,4 +102,4 @@ log "Requesting certificate for ${CERTNAME}"
 
 log "Ready!"
 
-exec sleep infinity
+exec /usr/lib/systemd/systemd
