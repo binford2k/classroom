@@ -11,9 +11,9 @@ You may have noticed funny log messages that clearly indicate that a string is
 not being interpolated properly. We'll fix that and then we'll add a conditional
 to the profile we're working on.
 
-1. Edit the `profile::apache` class manifest
-    * `/code/environments/production/site/profile/manifests/apache.pp`
-2. Find the single quoted strings in the vhost resource types and correct them
+1. Edit the site manifest
+    * `/code/environments/production/manifests/site.pp`
+2. Find the single quoted string in the notify resource title and correct it
    so that the strings are interpolated properly.
 3. Add a new class parameter to enable SSL conditionally.
     * Add `Boolean $ssl = false` to the class parameters list.

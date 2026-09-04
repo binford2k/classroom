@@ -56,7 +56,7 @@ Exercises to go along with the OpenVox Essentials training are contained in the
 be completed in a very short timeframe, so they're quite simple. You're not restricted
 to only these exercises. Please feel free to explore and experiment as you see fit.
 
-> [!INFO]
+> [!IMPORTANT]
 > If you find the editor not behaving as you'd expect, try turning off ad blockers and try again.
 
 * [Explore the resource abstraction layer](exercises/explore_ral.md)

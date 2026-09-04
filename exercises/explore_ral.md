@@ -41,9 +41,7 @@ Finally, experiment with *changing* a resource with
 
 * `bin/ubuntu puppet resource file /etc/motd content="Hello from DevopsDaysPDX"`
 * `bin/ubuntu cat /etc/motd`
-* Alma Linux is missing some package used by OpenVox. Let's resolve that now:
-    * `bin/alma puppet resource package util-linux ensure=present`
-    * `bin/alma puppet resource package procps ensure=present`
+
 
 > [!CAUTION]
 > It might be fun to see how much you can poke at your nodes, but we have extremely

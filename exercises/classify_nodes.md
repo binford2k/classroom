@@ -18,6 +18,11 @@ and makes it easier to change the backed implementation later if needed.
 3. Run OpenVox on each node
     * `bin/alma puppet agent -t`
     * `bin/ubuntu puppet agent -t`
+4. Validate that the server is running.
+    * `bin/alma curl http://localhost`
+    * `bin/alma curl -k https://localhost`
+    * `bin/ubuntu curl http://localhost`
+    * `bin/ubuntu curl -k https://localhost`
 
 > [!TIP]
 > Notice that the output may not be exactly what you expected! We will get to that very soon.
