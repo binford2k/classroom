@@ -33,7 +33,13 @@ install_agent_el() {
   log "Installing ${package}"
   dnf install -y "$package"
 
-  dnf install -y less vim iproute
+  dnf install -y less vim iproute util-linux procps openssl
+
+  # required for Apache SSL to start properly
+  openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
+      -keyout /etc/pki/tls/private/localhost.key      \
+      -out /etc/pki/tls/certs/localhost.crt           \
+      -subj "/C=US/ST=Oregon/L=Portland/O=Example/CN=localhost"
 }
 
 install_agent_deb() {
