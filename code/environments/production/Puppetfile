@@ -1,0 +1,9 @@
+## The Apache module will manage a full Apache stack and most of the code mods.
+## Uncomment the module itself and all the dependencies below.
+# mod 'puppetlabs-apache', '13.4.0'
+
+## These modules are dependencies of the Apache module.
+## We found these using the `Dependencies` tab
+# mod 'puppetlabs-stdlib', '10.0.2'
+# mod 'puppetlabs-concat', '10.0.1'
+# mod 'puppet-archive', '8.1.0'

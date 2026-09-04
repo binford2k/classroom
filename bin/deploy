@@ -1,0 +1,12 @@
+#!/usr/bin/env bash
+#
+# Run r10k on the OpenVox server container to deploy modules from the Forge.
+# This is required because we have only a Puppetfile, not a remote control repo.
+
+PROD="/etc/puppetlabs/code/environments/production/"
+
+set -euo pipefail
+
+source "$(dirname "${BASH_SOURCE[0]}")/lib/classroom.sh"
+
+enter "$SERVER_CONTAINER" "r10k" "puppetfile" "install" "--puppetfile=${PROD}/Puppetfile" "--moduledir=${PROD}/modules"
